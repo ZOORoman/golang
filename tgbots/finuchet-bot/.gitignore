@@ -1,5 +1,3 @@
-*.DS_Store
-*/logs
 *.bin
 *.env
 *docker-compose.yaml
