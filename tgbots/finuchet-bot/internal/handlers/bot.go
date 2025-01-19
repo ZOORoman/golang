@@ -74,6 +74,13 @@ func (h *BotHandler) handleTransactionInput(msg *tgbotapi.Message) {
 	}
 
 	switch text {
+	case "/start":
+		if err := h.service.RegisterUser(chatID); err != nil {
+			h.bot.Send(tgbotapi.NewMessage(chatID, "Ошибка при регистрации, попробуйте позже."))
+			log.Printf("Ошибка регистрации пользователя: %v", err)
+		} else {
+			h.sendMainMenu(chatID)
+		}
 	case "/menu":
 		h.sendMainMenu(chatID)
 	case "/options":
@@ -104,12 +111,12 @@ func (h *BotHandler) handleTransactionInput(msg *tgbotapi.Message) {
 			h.sendExpenseCategories(chatID)
 		}
 
-	default:
-		h.sendMainMenu(chatID)
+		// default:
+		// 	h.sendMainMenu(chatID)
 	}
 }
 
-// Отправка главного меню с кнопками 'Доход', 'Расход' и 'Отчет'
+// Отправка главного меню с кнопками "Доход", "Расход" и "Отчет"
 func (h *BotHandler) sendMainMenu(chatID int64) {
 	buttons := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
@@ -165,6 +172,9 @@ func (h *BotHandler) handleCallbackQuery(callbackQuery *tgbotapi.CallbackQuery) 
 func (h *BotHandler) sendOptionMenu(chatID int64) {
 	buttons := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Редактирование 📝", "edit"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Выгрузка 📤", "export"),
 			tgbotapi.NewInlineKeyboardButtonData("Очистка 🧹", "clear"),
 		),
@@ -204,6 +214,10 @@ func (h *BotHandler) sendIncomeCategories(chatID int64) {
 			tgbotapi.NewInlineKeyboardButtonData("Дебитор 🫴", "debit"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Премия 💰", "prize"),
+			tgbotapi.NewInlineKeyboardButtonData("Подработка 🤑", "addinc"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Инвест 💹", "invest"),
 			tgbotapi.NewInlineKeyboardButtonData("Вклад 🏦", "deposit"),
 		),
@@ -216,18 +230,37 @@ func (h *BotHandler) sendIncomeCategories(chatID int64) {
 
 // Отправка кнопок категорий для расходов
 func (h *BotHandler) sendExpenseCategories(chatID int64) {
-	buttons := tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Продукты 🛒", "shop"),
-			tgbotapi.NewInlineKeyboardButtonData("ЖКХ 👾", "service"),
-			tgbotapi.NewInlineKeyboardButtonData("Кафе 🍜", "cafe"),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Связь 🌐", "link"),
-			tgbotapi.NewInlineKeyboardButtonData("Образование 📚", "educ"),
-		),
-	)
+	categories := [][]string{
+		{"Аптеки 🏥", "phar"}, {"Авиабилеты 🛫", "avia"},
+		{"Аксессуары 🕶️", "access"}, {"Анализы 💉", "analys"},
+		{"Аренда 🔑", "rent"}, {"БытХим 🧹", "household"},
+		{"Витамины 💊", "vitamin"}, {"Госуслуги 🏢", "state"},
+		{"Дом и ремонт 🛠️", "repair"}, {"Ж/д билеты 🚂", "rail"},
+		{"Животные 🐾", "animal"}, {"ЖКХ 👾", "service"},
+		{"Инвестиции 💹", "invest"}, {"Интернет 🌐", "network"},
+		{"Канцтовары 📝", "office"}, {"Каршеринг 🏎️", "carsh"},
+		{"Книги 📚", "book"}, {"Красота 😻", "beauty"},
+		{"Кредиты 💸", "Loan"}, {"Медицина 🩺", "medic"},
+		{"Моб. связь 📞", "mobile"}, {"Наличные 🗞️", "cash"},
+		{"Образование 🎓", "educ"}, {"Одежда и обувь👟", "clothes"},
+		{"Переводы 📤", "trans"}, {"Подарки 🎁", "gift"},
+		{"Подписки 🤳", "subscript"}, {"Развлечения 🎢", "fun"},
+		{"Еда 🍜", "eat"}, {"Супермаркет 🛒", "mall"},
+		{"Такси 🚕", "taxi"}, {"Топливо ⛽️", "oil"},
+		{"Транспорт 🚌", "transport"}, {"Цветы 💐", "flowers"},
+		{"Спорт 💪", "sport"}, {"Остальное 🙉", "other"},
+	}
 
+	var rows [][]tgbotapi.InlineKeyboardButton
+	for i := 0; i < len(categories); i += 2 {
+		row := tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(categories[i][0], categories[i][1]),
+			tgbotapi.NewInlineKeyboardButtonData(categories[i+1][0], categories[i+1][1]),
+		)
+		rows = append(rows, row)
+	}
+
+	buttons := tgbotapi.NewInlineKeyboardMarkup(rows...)
 	msg := tgbotapi.NewMessage(chatID, "Выберите категорию расхода:")
 	msg.ReplyMarkup = buttons
 	h.bot.Send(msg)
@@ -405,7 +438,7 @@ func (h *BotHandler) handleReportCommand(chatID int64) {
 // 	}
 // }
 
-// Отправка главного меню с кнопками 'Доход', 'Расход' и 'Отчет'
+// Отправка главного меню с кнопками "Доход", "Расход" и "Отчет"
 // func (h *BotHandler) sendMainMenu(chatID int64) {
 // 	buttons := tgbotapi.NewInlineKeyboardMarkup(
 // 		tgbotapi.NewInlineKeyboardRow(
@@ -554,7 +587,7 @@ func (h *BotHandler) handleReportCommand(chatID int64) {
 // 		// h.sendMainMenu(chatID)        // Возвращаемся к главному меню
 
 // 	default:
-// 		h.bot.Send(tgbotapi.NewMessage(chatID, "Сначала выберите действие с помощью кнопок 'Доход 📈', 'Расход 📉' или 'Отчет 📊'."))
+// 		h.bot.Send(tgbotapi.NewMessage(chatID, "Сначала выберите действие с помощью кнопок "Доход 📈", "Расход 📉" или "Отчет 📊"."))
 // 	}
 
 // 	for update := range updates {
@@ -662,7 +695,7 @@ func (h *BotHandler) handleReportCommand(chatID int64) {
 // 	}
 // }
 
-// // Отправка главного меню с кнопками 'income' и 'expense'
+// // Отправка главного меню с кнопками "income" и "expense"
 // func (h *BotHandler) sendMainMenu(chatID int64) {
 // 	buttons := tgbotapi.NewReplyKeyboard(
 // 		tgbotapi.NewKeyboardButtonRow(
@@ -737,7 +770,7 @@ func (h *BotHandler) handleReportCommand(chatID int64) {
 // 		delete(h.userAmounts, chatID) // Удаление временной суммы
 
 // 	default:
-// 		h.bot.Send(tgbotapi.NewMessage(chatID, "Сначала выберите действие с помощью кнопок 'income' или 'expense'."))
+// 		h.bot.Send(tgbotapi.NewMessage(chatID, "Сначала выберите действие с помощью кнопок "income" или "expense"."))
 // 	}
 // }
 
@@ -834,7 +867,7 @@ func (h *BotHandler) handleReportCommand(chatID int64) {
 // 	}
 // }
 
-// // Отправка главного меню с кнопками 'income' и 'expense'
+// // Отправка главного меню с кнопками "income" и "expense"
 // func (h *BotHandler) sendMainMenu(chatID int64) {
 // 	buttons := tgbotapi.NewReplyKeyboard(
 // 		tgbotapi.NewKeyboardButtonRow(
@@ -882,7 +915,7 @@ func (h *BotHandler) handleReportCommand(chatID int64) {
 // 			h.bot.Send(tgbotapi.NewMessage(chatID, "Расход успешно добавлен."))
 // 		}
 // 	default:
-// 		h.bot.Send(tgbotapi.NewMessage(chatID, "Сначала выберите действие с помощью кнопок 'income' или 'expense'."))
+// 		h.bot.Send(tgbotapi.NewMessage(chatID, "Сначала выберите действие с помощью кнопок "income" или "expense"."))
 // 	}
 
 // 	// Сброс состояния после добавления транзакции
@@ -982,7 +1015,7 @@ func (h *BotHandler) handleReportCommand(chatID int64) {
 // 	}
 // }
 
-// // Отправка главного меню с кнопками 'Доход' и 'Расход'
+// // Отправка главного меню с кнопками "Доход" и "Расход"
 // func (h *BotHandler) sendMainMenu(chatID int64) {
 // 	buttons := tgbotapi.NewReplyKeyboard(
 // 		tgbotapi.NewKeyboardButtonRow(
@@ -1030,7 +1063,7 @@ func (h *BotHandler) handleReportCommand(chatID int64) {
 // 			h.bot.Send(tgbotapi.NewMessage(chatID, "Расход успешно добавлен."))
 // 		}
 // 	default:
-// 		h.bot.Send(tgbotapi.NewMessage(chatID, "Сначала выберите действие с помощью кнопок 'income' или 'expense'."))
+// 		h.bot.Send(tgbotapi.NewMessage(chatID, "Сначала выберите действие с помощью кнопок "income" или "expense"."))
 // 	}
 
 // 	// Сброс состояния после добавления транзакции

@@ -30,7 +30,7 @@ func LoadConfig() *Config {
 		BotToken: getEnv("BOT_TOKEN", ""),
 		DB: DBConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     5422,
+			Port:     5432,
 			User:     getEnv("DB_USER", "postgre"),
 			Password: getEnv("DB_PASSWORD", "root"),
 			DBName:   getEnv("DB_NAME", "db_admin"),

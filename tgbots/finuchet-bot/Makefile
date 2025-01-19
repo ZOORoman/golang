@@ -6,3 +6,5 @@ build:
 
 run: build
 	./.bin/bot
+
+# make run
